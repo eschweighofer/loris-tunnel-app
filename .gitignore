@@ -14,10 +14,14 @@ build/bin/
 build/windows/installer/
 
 # Node / frontend outputs
-node_modules
+node_modules/
 frontend/dist
 frontend/wailsjs
 frontend/package.json.md5
+
+# pnpm
+.pnpm-store/
+pnpm-debug.log*
 
 # Local machine / runtime config
 config.toml

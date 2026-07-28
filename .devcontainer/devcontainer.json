@@ -1,0 +1,36 @@
+{
+  "name": "loris-tunnel-app",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    }
+  },
+  "forwardPorts": [5173, 34115],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite dev server"
+    },
+    "34115": {
+      "label": "Wails dev server"
+    }
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@10 --activate && cd frontend && pnpm install",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "Vue.volar",
+        "editorconfig.editorconfig",
+        "dbaeumer.vscode-eslint"
+      ],
+      "settings": {
+        "go.toolsManagement.autoUpdate": false
+      }
+    }
+  }
+}
