@@ -267,7 +267,25 @@ func (a *App) shutdown(ctx context.Context) {
 	}
 }
 
+// licenseSkipped reports whether [license].skip is enabled in config, in
+// which case the whole licensing concept is bypassed: the app behaves as
+// fully Pro-licensed and never contacts the license backend.
+func (a *App) licenseSkipped() bool {
+	if a.storage == nil {
+		return false
+	}
+	cfg, err := a.storage.Load()
+	if err != nil {
+		return false
+	}
+	return cfg.License.Skip
+}
+
 func (a *App) startUsageReporter() {
+	if a.licenseSkipped() {
+		slog.Info("usage reporter skipped: license.skip enabled")
+		return
+	}
 	if a.license == nil || strings.TrimSpace(a.machineID) == "" {
 		slog.Warn("usage reporter skipped: missing client or machine id")
 		return
@@ -526,6 +544,9 @@ func (a *App) DebugJumperFailure(payload model.JumperPayload, rawError string, u
 	if err := a.ensureReady(); err != nil {
 		return model.AIDebugResult{}, err
 	}
+	if a.licenseSkipped() {
+		return model.AIDebugResult{}, fmt.Errorf("AI debug is unavailable: licensing is disabled (license.skip=true)")
+	}
 	if a.aiDebug == nil {
 		return model.AIDebugResult{}, fmt.Errorf("ai debug service is not initialized")
 	}
@@ -556,6 +577,9 @@ func (a *App) DebugJumperFailure(payload model.JumperPayload, rawError string, u
 func (a *App) DebugTunnelFailure(payload model.TunnelPayload, inlineJumper *model.JumperPayload, rawError string, uiLocale string) (model.AIDebugResult, error) {
 	if err := a.ensureReady(); err != nil {
 		return model.AIDebugResult{}, err
+	}
+	if a.licenseSkipped() {
+		return model.AIDebugResult{}, fmt.Errorf("AI debug is unavailable: licensing is disabled (license.skip=true)")
 	}
 	if a.aiDebug == nil {
 		return model.AIDebugResult{}, fmt.Errorf("ai debug service is not initialized")
@@ -615,6 +639,9 @@ func (a *App) DebugTunnelFailure(payload model.TunnelPayload, inlineJumper *mode
 func (a *App) DebugSavedTunnelFailure(id int, rawError string, uiLocale string) (model.AIDebugResult, error) {
 	if err := a.ensureReady(); err != nil {
 		return model.AIDebugResult{}, err
+	}
+	if a.licenseSkipped() {
+		return model.AIDebugResult{}, fmt.Errorf("AI debug is unavailable: licensing is disabled (license.skip=true)")
 	}
 	if a.aiDebug == nil {
 		return model.AIDebugResult{}, fmt.Errorf("ai debug service is not initialized")
@@ -676,6 +703,9 @@ func (a *App) ToggleTunnel(id int) (model.Tunnel, error) {
 // tunnelStartLimit returns FreePlanRunningLimit for non-Pro (or when license
 // cannot be verified), and 0 for Pro (unlimited).
 func (a *App) tunnelStartLimit() int {
+	if a.licenseSkipped() {
+		return 0
+	}
 	if a.license == nil {
 		return biz.FreePlanRunningLimit
 	}
@@ -745,6 +775,9 @@ func (a *App) GetLicenseStatus() (model.LicenseStatus, error) {
 	if err := a.ensureReady(); err != nil {
 		return model.LicenseStatus{}, err
 	}
+	if a.licenseSkipped() {
+		return model.LicenseStatus{Active: true, IsLifetime: true}, nil
+	}
 	if a.license == nil {
 		return model.LicenseStatus{}, fmt.Errorf("license service is not initialized")
 	}
@@ -769,6 +802,13 @@ func (a *App) GetLicenseStatus() (model.LicenseStatus, error) {
 func (a *App) RedeemLicenseCode(code string) (model.LicenseRedeemResult, error) {
 	if err := a.ensureReady(); err != nil {
 		return model.LicenseRedeemResult{}, err
+	}
+	if a.licenseSkipped() {
+		return model.LicenseRedeemResult{
+			Success: true,
+			Active:  true,
+			Message: "Licensing is disabled (license.skip=true in config); app is running in Pro mode.",
+		}, nil
 	}
 	if a.license == nil {
 		return model.LicenseRedeemResult{}, fmt.Errorf("license service is not initialized")

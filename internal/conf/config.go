@@ -59,6 +59,10 @@ type Config struct {
 
 type LicenseConfig struct {
 	Code string `toml:"code"`
+	// Skip disables the licensing concept entirely: when true, the app runs
+	// as if it were fully Pro-licensed and makes no network calls to the
+	// license backend (no status checks, redemption, or usage reporting).
+	Skip bool `toml:"skip"`
 }
 
 // GetHomeConfigPath returns the absolute path for the home config file
