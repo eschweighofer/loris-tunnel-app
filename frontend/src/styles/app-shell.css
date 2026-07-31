@@ -1025,6 +1025,18 @@
   border-top: 1px solid var(--lt-border);
 }
 
+.license-redeem-panel {
+  border: 1px solid var(--lt-border);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-surface-2);
+  padding: 0.85rem 0.9rem;
+}
+
+.license-redeem-panel .form-label {
+  font-size: 0.82rem;
+  margin-bottom: 0.35rem;
+}
+
 .license-code-label {
   font-size: 0.78rem;
   color: var(--lt-muted);

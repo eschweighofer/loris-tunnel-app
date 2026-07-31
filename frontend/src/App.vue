@@ -50,7 +50,7 @@ import TunnelModal from './components/modals/TunnelModal.vue'
 import TunnelGroupModal from './components/modals/TunnelGroupModal.vue'
 import ImportTunnelModal from './components/modals/ImportTunnelModal.vue'
 import './styles/app-shell.css'
-import { AI_DEBUG_ENABLED } from './config/features'
+import { AI_DEBUG_ENABLED, UPGRADE_INLINE_REDEEM } from './config/features'
 
 const { t, locale } = useI18n()
 
@@ -102,7 +102,7 @@ const CONFIG_TOAST_DURATION_MS = 3800
 let configToastTimer = null
 
 const appMeta = reactive({
-  version: '1.1.2.0'
+  version: '1.1.3.0'
 })
 const distributionChannel = ref('github')
 const isStoreDistribution = computed(() => distributionChannel.value === 'store')
@@ -899,6 +899,10 @@ function openProUpgrade() {
     return
   }
 
+  // UPGRADE_INLINE_REDEEM=true：跳到配置页内联展开；false：直接弹 overlay
+  if (UPGRADE_INLINE_REDEEM && activePage.value !== 'config') {
+    switchPage('config')
+  }
   openRedeemDialog()
   void refreshLicenseStatus({ silent: true }).then((ok) => {
     if (ok && proLicense.isPro) {
@@ -2134,6 +2138,7 @@ watch(
       :traffic="traffic"
       :traffic-history-up="trafficHistoryUp"
       :traffic-history-down="trafficHistoryDown"
+      :show-upgrade-button="!UPGRADE_INLINE_REDEEM"
       @switch-page="switchPage"
       @upgrade="openProUpgrade"
       @open-release-page="openReleasePage"
@@ -2218,12 +2223,19 @@ watch(
           :is-checking-updates="isCheckingUpdates"
           :is-refreshing-license-status="isRefreshingLicenseStatus"
           :update-check-dialog="updateCheckDialog"
+          :redeem-panel-visible="UPGRADE_INLINE_REDEEM && redeemDialog.visible"
+          :redeem-code="redeemDialog.code"
+          :redeem-error="redeemDialog.error"
+          :redeem-submitting="redeemDialog.submitting"
           @theme-change="setThemeBySwitch"
           @check-updates="checkForUpdates"
           @open-release-page="openReleasePage"
           @close-update-check-dialog="closeUpdateCheckDialog"
           @refresh-license-status="refreshLicenseStatusFromConfig"
           @upgrade="openProUpgrade"
+          @update:redeem-code="(v) => (redeemDialog.code = v)"
+          @submit-redeem="submitRedeemDialog"
+          @cancel-redeem="closeRedeemDialog"
           @set-config-message="setConfigMessage"
           @reload-state="loadStateFromBackend"
           @confirm-action="openActionDialog"
@@ -2298,15 +2310,15 @@ watch(
     @report-content="reportAIDebugContent('saved_tunnel', selectedAIDebugTunnelState)"
   />
 
-  <div v-if="redeemDialog.visible" class="overlay">
+  <div v-if="!UPGRADE_INLINE_REDEEM && redeemDialog.visible" class="overlay">
     <div class="dialog-card compact-dialog redeem-dialog">
       <div class="dialog-head">
         <h3 class="dialog-title">{{ $t('config.redeemDialog.title') }}</h3>
       </div>
       <form class="dialog-body" @submit.prevent="submitRedeemDialog">
-        <label for="redeemCodeInput" class="form-label">{{ $t('config.redeemDialog.codeLabel') }}</label>
+        <label for="redeemCodeInputOverlay" class="form-label">{{ $t('config.redeemDialog.codeLabel') }}</label>
         <input
-          id="redeemCodeInput"
+          id="redeemCodeInputOverlay"
           v-model="redeemDialog.code"
           type="text"
           class="form-control"

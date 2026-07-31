@@ -48,6 +48,10 @@ const props = defineProps({
   trafficHistoryDown: {
     type: Array,
     default: () => []
+  },
+  showUpgradeButton: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -266,7 +270,7 @@ function onChartMouseLeave() {
           <span v-if="hasNewVersion" class="version-new-badge" @click="$emit('open-release-page')">new</span>
         </span>
         <button
-          v-if="!isPro"
+          v-if="showUpgradeButton && !isPro"
           type="button"
           class="btn btn-primary btn-sm sidebar-upgrade-btn"
           :title="$t('app.sidebar.upgrade')"
@@ -280,7 +284,7 @@ function onChartMouseLeave() {
             {{ $t('app.sidebar.upgrade') }}
           </template>
         </button>
-        <template v-else>
+        <template v-else-if="isPro">
           <span
             v-if="collapsed"
             class="sidebar-pro-badge"

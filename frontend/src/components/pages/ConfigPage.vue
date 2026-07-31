@@ -59,6 +59,22 @@ const props = defineProps({
   updateCheckDialog: {
     type: Object,
     required: true
+  },
+  redeemPanelVisible: {
+    type: Boolean,
+    default: false
+  },
+  redeemCode: {
+    type: String,
+    default: ''
+  },
+  redeemError: {
+    type: String,
+    default: ''
+  },
+  redeemSubmitting: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -72,7 +88,10 @@ const emit = defineEmits([
   'set-config-message',
   'reload-state',
   'confirm-action',
-  'traffic-monitor-change'
+  'traffic-monitor-change',
+  'update:redeem-code',
+  'submit-redeem',
+  'cancel-redeem'
 ])
 
 const { t, locale } = useI18n()
@@ -499,6 +518,41 @@ watch(locale, async (newLocale) => {
                 @click="$emit('refresh-license-status')"
               >
                 {{ isRefreshingLicenseStatus ? t('config.refreshingLicenseStatus') : `Pro · ${proExpiryLabel}` }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="redeemPanelVisible" class="license-redeem-panel mt-3">
+            <div class="fw-semibold mb-2">{{ t('config.redeemDialog.title') }}</div>
+            <label for="redeemCodeInput" class="form-label">{{ t('config.redeemDialog.codeLabel') }}</label>
+            <input
+              id="redeemCodeInput"
+              :value="redeemCode"
+              type="text"
+              class="form-control"
+              :placeholder="t('config.redeemDialog.codePlaceholder')"
+              :disabled="redeemSubmitting"
+              @input="$emit('update:redeem-code', $event.target.value)"
+              @keyup.enter="$emit('submit-redeem')"
+            />
+            <div class="field-note mt-1">{{ t('config.redeemDialog.codeHint') }}</div>
+            <p v-if="redeemError" class="form-error mb-0 mt-2">{{ redeemError }}</p>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                :disabled="redeemSubmitting"
+                @click="$emit('cancel-redeem')"
+              >
+                {{ t('app.common.cancel') }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                :disabled="redeemSubmitting"
+                @click="$emit('submit-redeem')"
+              >
+                {{ redeemSubmitting ? t('config.redeemDialog.submitting') : t('app.sidebar.upgrade') }}
               </button>
             </div>
           </div>
